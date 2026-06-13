@@ -79,7 +79,7 @@ async function main() {
     },
   });
 
-  await prisma.facultyProfile.create({
+  const hodProfile = await prisma.facultyProfile.create({
     data: {
       userId: hod.id,
       employeeId: 'FAC002',
@@ -92,10 +92,10 @@ async function main() {
     },
   });
 
-  // Update HOD
+  // Update HOD with FacultyProfile id (not User id)
   await prisma.department.update({
     where: { id: departments[0].id },
-    data: { hodId: hod.id },
+    data: { hodId: hodProfile.id },
   });
 
   // Students

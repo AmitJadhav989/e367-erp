@@ -15,5 +15,10 @@
   "devDependencies": {
     "concurrently": "^9.1.2",
     "prettier": "^3.4.2"
+  },
+  "dependencies": {
+    "client": "^0.0.1",
+    "prefix": "^1.0.0",
+    "server": "^1.0.42"
   }
 }
