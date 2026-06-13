@@ -1,0 +1,14 @@
+export { default as HeroSection } from './HeroSection';
+export { default as AboutSection } from './AboutSection';
+export { default as StatsSection } from './StatsSection';
+export { default as MessagesSection } from './MessagesSection';
+export { default as DepartmentSection } from './DepartmentSection';
+export { default as FacultySection } from './FacultySection';
+export { default as PlacementSection } from './PlacementSection';
+export { default as EventsSection } from './EventsSection';
+export { default as GallerySection } from './GallerySection';
+export { default as ResearchSection } from './ResearchSection';
+export { default as AlumniSection } from './AlumniSection';
+export { default as FacilitiesSection } from './FacilitiesSection';
+export { default as TestimonialSection } from './TestimonialSection';
+export { default as ContactSection } from './ContactSection';

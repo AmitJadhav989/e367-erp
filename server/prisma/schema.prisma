@@ -1,0 +1,439 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  COLLEGE_ADMIN
+  PRINCIPAL
+  HOD
+  FACULTY
+  STUDENT
+  PARENT
+  ACCOUNTANT
+  EXAM_CELL
+  PLACEMENT_OFFICER
+  LIBRARIAN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LEAVE
+}
+
+enum ExamType {
+  INTERNAL
+  MIDTERM
+  PRACTICAL
+  END_SEMESTER
+  BACKLOG
+  SUPPLEMENTARY
+}
+
+enum FeeMode {
+  CASH
+  CARD
+  UPI
+  NET_BANKING
+  CHEQUE
+}
+
+enum PlacementStatus {
+  APPLIED
+  SHORTLISTED
+  SELECTED
+  REJECTED
+}
+
+enum NotificationType {
+  ANNOUNCEMENT
+  REMINDER
+  ALERT
+}
+
+enum NotificationPriority {
+  URGENT
+  NORMAL
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password     String
+  role         UserRole
+  isActive     Boolean  @default(true)
+  twoFactorSecret String?
+  lastLogin    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  studentProfile StudentProfile?
+  facultyProfile FacultyProfile?
+  parentProfile  ParentProfile?
+
+  sentMessages    ChatMessage[]     @relation("SentMessages")
+  receivedMessages ChatMessage[]    @relation("ReceivedMessages")
+  bookTransactions BookTransaction[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model StudentProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usn        String   @unique
+  firstName  String
+  lastName   String
+  photo      String?
+  dob        DateTime
+  gender     Gender
+  bloodGroup String?
+  email      String
+  phone      String
+  address    String?
+  parentId   String?
+  parent     ParentProfile? @relation(fields: [parentId], references: [id])
+  batchId    String?
+  batch      Batch?   @relation(fields: [batchId], references: [id])
+  branchId   String
+  branch     Department @relation(fields: [branchId], references: [id])
+  semester   Int
+  section    String
+  cgpa       Float?
+  backlogs   Int       @default(0)
+
+  attendanceRecords AttendanceRecord[]
+  examResults       ExamResult[]
+  feeTransactions   FeeTransaction[]
+  placementApplications PlacementApplication[]
+  bookTransactions  BookTransaction[]
+  complaints        Complaint[]
+  hostelAllocation  HostelAllocation?
+  transportAllocation TransportAllocation?
+
+  @@index([usn])
+  @@index([branchId])
+  @@index([semester])
+}
+
+model ParentProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relation   String
+  phone      String
+  email      String
+  occupation String?
+
+  wards StudentProfile[]
+}
+
+model FacultyProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employeeId    String   @unique
+  firstName     String
+  lastName      String
+  photo         String?
+  designation   String
+  qualification String
+  departmentId  String
+  department    Department @relation("DepartmentFaculty", fields: [departmentId], references: [id])
+  hodOf         Department? @relation("DepartmentHOD")
+  joiningDate   DateTime
+
+  @@index([employeeId])
+  @@index([departmentId])
+}
+
+model Department {
+  id             String   @id @default(uuid())
+  name           String   @unique
+  code           String   @unique
+  hodId          String? @unique
+  establishedYear Int
+
+  students  StudentProfile[]
+  faculty   FacultyProfile[] @relation("DepartmentFaculty")
+  courses   Course[]
+  hod       FacultyProfile? @relation("DepartmentHOD", fields: [hodId], references: [id])
+
+  @@index([code])
+}
+
+model Batch {
+  id   String @id @default(uuid())
+  name String @unique
+  year Int
+
+  students StudentProfile[]
+}
+
+model Course {
+  id           String @id @default(uuid())
+  code         String @unique
+  name         String
+  credits      Int
+  hours        Int
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  attendanceRecords AttendanceRecord[]
+  exams             Exam[]
+}
+
+model AttendanceRecord {
+  id        String           @id @default(uuid())
+  studentId String
+  student   StudentProfile   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course           @relation(fields: [courseId], references: [id])
+  date      DateTime
+  status    AttendanceStatus
+  markedBy  String
+  createdAt DateTime         @default(now())
+
+  @@unique([studentId, courseId, date])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([date])
+}
+
+model Exam {
+  id           String   @id @default(uuid())
+  name         String
+  type         ExamType
+  semester     Int
+  courseId     String
+  course       Course   @relation(fields: [courseId], references: [id])
+  date         DateTime
+  maxMarks     Int
+  passingMarks Int
+
+  results ExamResult[]
+
+  @@index([courseId])
+  @@index([semester])
+}
+
+model ExamResult {
+  id            String  @id @default(uuid())
+  studentId     String
+  student       StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  examId        String
+  exam          Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  marksObtained Float
+  grade         String?
+  sgpa          Float?
+  cgpa          Float?
+
+  @@unique([studentId, examId])
+  @@index([studentId])
+}
+
+model FeeStructure {
+  id                 String   @id @default(uuid())
+  name               String
+  amount             Float
+  semester           Int
+  category           String
+  installmentAllowed Boolean  @default(false)
+
+  transactions FeeTransaction[]
+}
+
+model FeeTransaction {
+  id             String   @id @default(uuid())
+  studentId      String
+  student        StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  feeStructureId String
+  feeStructure   FeeStructure @relation(fields: [feeStructureId], references: [id])
+  amountPaid     Float
+  mode           FeeMode
+  transactionId  String   @unique
+  receiptUrl     String?
+  paidAt         DateTime @default(now())
+
+  @@index([studentId])
+}
+
+model Company {
+  id          String @id @default(uuid())
+  name        String @unique
+  logo        String?
+  website     String?
+  description String?
+
+  placementDrives PlacementDrive[]
+}
+
+model PlacementDrive {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  role        String
+  package     Float
+  eligibility String
+  deadline    DateTime
+  createdAt   DateTime @default(now())
+
+  applications PlacementApplication[]
+}
+
+model PlacementApplication {
+  id        String          @id @default(uuid())
+  studentId String
+  student   StudentProfile  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  driveId   String
+  drive     PlacementDrive  @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  status    PlacementStatus @default(APPLIED)
+  resumeUrl String?
+  appliedAt DateTime        @default(now())
+
+  @@unique([studentId, driveId])
+  @@index([driveId])
+}
+
+model Book {
+  id       String @id @default(uuid())
+  title    String
+  author   String
+  isbn     String @unique
+  category String
+  quantity Int
+  rack     String?
+
+  transactions BookTransaction[]
+}
+
+model BookTransaction {
+  id         String   @id @default(uuid())
+  bookId     String
+  book       Book     @relation(fields: [bookId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  studentId  String?
+  student    StudentProfile? @relation(fields: [studentId], references: [id])
+  type       String
+  issuedAt   DateTime @default(now())
+  returnedAt DateTime?
+  fine       Float?
+
+  @@index([bookId])
+}
+
+model HostelAllocation {
+  id         String @id @default(uuid())
+  studentId  String @unique
+  student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  roomId     String
+  room       Room   @relation(fields: [roomId], references: [id])
+  startDate  DateTime @default(now())
+  endDate    DateTime?
+}
+
+model Room {
+  id          String @id @default(uuid())
+  hostelId    String
+  hostel      Hostel @relation(fields: [hostelId], references: [id])
+  floor       Int
+  roomNumber  String
+  capacity    Int
+  type        String
+
+  allocations HostelAllocation[]
+}
+
+model Hostel {
+  id     String @id @default(uuid())
+  name   String
+  gender Gender
+
+  rooms Room[]
+}
+
+model Complaint {
+  id          String   @id @default(uuid())
+  studentId   String
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  category    String
+  description String
+  status      String   @default("Pending")
+  createdAt   DateTime @default(now())
+
+  @@index([studentId])
+  @@index([status])
+}
+
+model TransportAllocation {
+  id        String @id @default(uuid())
+  studentId String @unique
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  routeId   String
+  route     BusRoute @relation(fields: [routeId], references: [id])
+}
+
+model BusRoute {
+  id          String @id @default(uuid())
+  name        String
+  driverName  String
+  driverPhone String
+  stops       Json
+  gpsLat     Float?
+  gpsLng     Float?
+
+  allocations TransportAllocation[]
+}
+
+model Notification {
+  id        String             @id @default(uuid())
+  title     String
+  body      String
+  type      NotificationType
+  priority  NotificationPriority @default(NORMAL)
+  createdAt DateTime           @default(now())
+}
+
+model ChatMessage {
+  id            String   @id @default(uuid())
+  senderId      String
+  sender        User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId    String
+  receiver      User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  text          String
+  attachmentUrl String?
+  createdAt     DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  role      UserRole
+  action    String
+  resource  String
+  details   Json?
+  ip        String?
+  userAgent String?
+  timestamp DateTime @default(now())
+
+  @@index([userId])
+  @@index([timestamp])
+}

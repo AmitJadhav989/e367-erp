@@ -1,0 +1,47 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint --prefix client
+      - run: npm run lint --prefix server
+
+  build:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+      - run: npm ci --prefix client
+      - run: npm run build --prefix client
+      - run: npm ci --prefix server
+      - run: npx prisma generate --schema=server/prisma/schema.prisma
+      - run: npm run build --prefix server
+      - run: echo "Build successful"
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production server..."
+          # Add deployment commands here (e.g., SSH, docker-compose pull/up)

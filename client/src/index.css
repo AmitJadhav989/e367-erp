@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-red: #FF0000;
+  --color-brand-teal: #00B4D8;
+  --color-brand-navy: #1B263B;
+  --color-brand-purple: #7209B7;
+  --color-brand-blue-light: #E0F7FA;
+  --color-surface-glass: rgba(255, 255, 255, 0.15);
+  --color-surface-dark: #0A0A0A;
+
+  --font-heading: 'Italiana', serif;
+  --font-body: 'Manrope', sans-serif;
+  --font-script: 'Marck Script', cursive;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-card-dark {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #FF0000, #7209B7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-gradient-overlay {
+  background: linear-gradient(180deg, rgba(255, 0, 0, 0) 0%, rgba(10, 10, 10, 0.8) 100%);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
